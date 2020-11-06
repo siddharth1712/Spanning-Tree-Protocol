@@ -10,37 +10,46 @@ class lan:
         self.hosts=[]
         
 #-------------------------------------------------
-tr=int(input())
-n=int(input())
-br_list=[]
-lan_list=[]
-temp_bridge_aa=[]
+def take_input(tr,n,br_list,lan_list):
+    tr=int(input())
+    n=int(input())
+    #br_list=[]
+    #lan_list=[]
 
-for i in range(0,n):    #1
+    for i in range(0,n):    #1
 
-    inp=input().split(' ')
-    br_list.append(bridge())
-    br_list[i].id=int(inp[0][1:-1])
-    
-    for temp_l in inp[1:]:  #2
-        br_list[i].conn_lans.update({temp_l:0}) #initialising all connections to DP
-
-        lan_exists=False
-        for l in lan_list:  #3
-            if l.id==temp_l:
-                l.conn_br.update({br_list[i].id:0})
-                lan_exists=True
-                break
-
-        if not lan_exists:
-
-            lan_list.append(lan())
-            lan_list[-1].id=temp_l            
-            lan_list[-1].conn_br.update({br_list[i].id:0})
+        inp=input().split(' ')
+        temp_bridge_obj=bridge()
+        br_id=int(inp[0][1:-1])
+        temp_bridge_obj.id=br_id
+        
+        for temp_l in inp[1:]:  #2
+            temp_bridge_obj.conn_lans.update({temp_l:0}) #initialising all connections to DP
             
-''''''
-for b in br_list:
-    print(b.id,b.conn_lans)
-for l in lan_list:
-    print(l.id,l.conn_br)
-''''''
+            if temp_l not in lan_list:
+                temp_lan_obj=lan()
+                temp_lan_obj.id=temp_l
+                lan_list.update({temp_l:temp_lan_obj})
+
+            lan_list[temp_l].conn_br.update({br_id:0})
+
+        br_list.update({br_id:temp_bridge_obj})
+        
+    
+    for i in range(len(lan_list)):
+        inp=input().split(' ')
+        lan_id=inp[0][0]
+        for host in inp[1:]:
+            lan_list[lan_id].hosts.append(int(host[1:]))
+
+    ''''''
+    for bridge_id,brobj in br_list.items():
+        print(brobj.id,brobj.conn_lans)
+    for lan_id,lanobj in lan_list.items():
+        print(lanobj.id,lanobj.conn_br,lanobj.hosts)
+    ''''''
+    
+    
+    
+    return tr,n,br_list,lan_list
+
