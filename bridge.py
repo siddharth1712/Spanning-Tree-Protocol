@@ -14,6 +14,8 @@ class lan:
         self.id='\0'
         self.conn_br=[]  #second entry is 1 for RP, 0 for DP, -1 for NP
         self.hosts=[]
+    def disp(self):
+        print(self.dp,self.id,self.conn_br,self.hosts)
 class message:
     def __init__(self):
         self.port='\0'
@@ -58,12 +60,12 @@ def take_input(tr,n,br_list,lan_list):
         for host in inp[1:]:
             lan_list[lan_id].hosts.append(int(host[1:]))
 
-    ''''''
+    '''
     for bridge_id,brobj in br_list.items():
         brobj.disp()
     for lan_id,lanobj in lan_list.items():
-        print(lanobj.id,lanobj.conn_br,lanobj.hosts)
-    ''''''
+        lanobj.disp()
+    '''
     
     
     
@@ -108,23 +110,23 @@ def initialize(tr,n,br_list,lan_list):
         m.src_id=br_obj.id
         m.root=br_obj.id
         sent.append(m)
-        print(m.d,m.src_id,m.root)
+        
     first=True
     while len(sent)>0:
+        
         if not first:
             sent.clear()
+
         for m in recd:
-            print(m.d,m.src_id,m.dest_id,m.root,m.port,m.stop)
             temp,br_list=fwd(m,br_list,lan_list)
             if not temp.stop:
                 sent.append(temp)
+
         recd.clear()
-        print("============")
+
         for m in sent:
-            #print(m.d,m.src_id,m.root)
-            print(m.d,m.src_id,m.dest_id,m.root,m.port,m.stop)
             recd=recd+(send(m,br_list,lan_list))
-        print("------------")
+
         new_recd=[]
         for i in recd:
             matched=False
@@ -135,10 +137,26 @@ def initialize(tr,n,br_list,lan_list):
             if not matched:
                 new_recd.append(i)
         recd=new_recd
+
         first=False
 
+    for lan_id,lan_obj in lan_list.items():
+        d=br_list[lan_obj.conn_br[0]].rootd
+        min_br=lan_obj.conn_br[0]
+        for br in lan_obj.conn_br:
+            if br_list[br].rootd<d:
+                d=br_list[br].rootd
+                min_br=br
+            else :
+                if (br_list[br]==d) & (br<min_br):
+                    min_br=br
+        lan_obj.dp=min_br
+                
     for temp,b in br_list.items():
         b.disp()
+
+    for lanid,lanobj in lan_list.items():
+        lanobj.disp()
     
     return br_list,lan_list
 
