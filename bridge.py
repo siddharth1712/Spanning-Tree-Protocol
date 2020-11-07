@@ -8,7 +8,22 @@ class bridge:
         self.conn_lans=[]
         self.lans=[]
     def disp(self):
-        print(self.root,self.rp,self.rootd,self.id,self.conn_lans,self.lans,self.ftable)
+        #print(self.root,self.rp,self.rootd,self.id,self.conn_lans,self.lans,self.ftable)
+        stri="B{}:".format(self.id)
+        for l in self.conn_lans:
+            if l==self.rp[0]:
+                stri+=" {}-RP".format(l)
+            else:
+                if l in self.lans:
+                    stri+=" {}-DP".format(l)
+                else:
+                    stri+=" {}-NP".format(l)
+        print(stri)
+    def printftable(self):
+        print("B{}:".format(self.id))
+        print("HOST ID | FORWARDING PORT")
+        for h,p in self.ftable.items():
+            print("H{} | {}".format(h,p))
         
 class lan:
     def __init__(self):
@@ -145,7 +160,7 @@ def initialize(tr,n,br_list,lan_list):
                 d=br_list[br].rootd
                 min_br=br
             else :
-                if (br_list[br]==d) & (br<min_br):
+                if (br_list[br].rootd==d) & (br<min_br):
                     min_br=br
         lan_obj.dp=min_br
 
@@ -155,13 +170,31 @@ def initialize(tr,n,br_list,lan_list):
                 lan_list[l].br.append(br_obj.id)
                 br_obj.lans.append(l)
                 
-    for temp,b in br_list.items():
-        b.disp()
-
-    for lanid,lanobj in lan_list.items():
-        lanobj.disp()
     
     return br_list,lan_list
+
+def sortbr(br_list):
+    tempbr=[]
+    for br_id,br in br_list.items():
+        br.conn_lans.sort()
+        br.lans.sort()
+        temp=[]
+        for temp1,temp2 in br.ftable.items():
+            temp.append(temp1)
+        temp.sort()
+        tempft={}
+        for t in temp:
+            tempft.update({t:br.ftable[t]})
+        br.ftable=tempft
+
+        tempbr.append(br.id)
+    tempbr.sort()
+    new_br_list={}
+    for br in tempbr:
+        new_br_list.update({br:br_list[br]})
+    br_list=new_br_list
+    return br_list
+
 
 def sendpacket(tr,n,br_list,lan_list):
     sent=[]
@@ -190,13 +223,14 @@ def sendpacket(tr,n,br_list,lan_list):
             sent.clear()
             
             for m in recd:
-                if m.dest_host in br_list[m.bridge].ftable:
-                    m1=data()
-                    m1.bridge=m.bridge
-                    m1.src_host=m.src_host
-                    m1.dest_host=m.dest_host
-                    m1.lan=br_list[m.bridge].ftable[m.dest_host]
-                    sent.append(m1)
+                if (m.dest_host in br_list[m.bridge].ftable):
+                    if m.lan!=br_list[m.bridge].ftable[m.dest_host]:
+                        m1=data()
+                        m1.bridge=m.bridge
+                        m1.src_host=m.src_host
+                        m1.dest_host=m.dest_host
+                        m1.lan=br_list[m.bridge].ftable[m.dest_host]
+                        sent.append(m1)
                 else:
                     for l in br_list[m.bridge].lans:
                         if l!=m.lan:
@@ -209,11 +243,10 @@ def sendpacket(tr,n,br_list,lan_list):
                             sent.append(m1)
                 br_list[m.bridge].ftable.update({m.src_host:m.lan})
             recd.clear()
-    print("====")
-    for temp,b in br_list.items():
-        b.disp()
+        br_list=sortbr(br_list)
+        for br_id,br_obj in br_list.items():
+            br_obj.printftable()
 
-    for lanid,lanobj in lan_list.items():
-        lanobj.disp()
-    
+        if i!=t-1:
+            print("")
     return br_list,lan_list
